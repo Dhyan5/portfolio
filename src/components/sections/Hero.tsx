@@ -14,7 +14,7 @@ export default function Hero() {
       >
         <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-background-secondary mb-8 ring-1 ring-border-color/50">
           <Image
-            src="https://api.dicebear.com/7.x/notionists/svg?seed=Dhyan"
+            src="/profile.jpg"
             alt="Dhyan S Shetty"
             width={160}
             height={160}
