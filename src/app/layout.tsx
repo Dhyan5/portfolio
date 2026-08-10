@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import GlobalAtmosphereShell from "@/components/foundation/GlobalAtmosphereShell";
 
 const inter = Inter({
   variable: "--font-sans-display",
@@ -21,12 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} antialiased`}>
-      <body className="min-h-screen flex flex-col font-sans bg-background text-foreground">
-        <Navbar />
-        <main className="flex-grow flex flex-col items-center">
-          {children}
-        </main>
-        <Footer />
+      <body className="min-h-screen font-sans bg-background text-foreground">
+        <GlobalAtmosphereShell>
+          <Navbar />
+          <main className="relative z-20 flex min-h-screen flex-col items-center pt-28">
+            {children}
+          </main>
+          <Footer />
+        </GlobalAtmosphereShell>
       </body>
     </html>
   );

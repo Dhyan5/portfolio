@@ -44,8 +44,8 @@ export default function Projects() {
   ];
 
   return (
-    <section id="projects" className="w-full py-32 bg-background border-t border-border-color/30">
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+    <section id="projects" className="w-full py-28 bg-background border-t border-border-color/40">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 edge-frame">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -53,22 +53,22 @@ export default function Projects() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col items-center"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-16 tracking-tight">Projects</h2>
+          <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-16 tracking-[-0.02em]">Projects</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
             {projects.map((project, index) => (
               <div 
                 key={index} 
-                className="flex flex-col bg-background-secondary rounded-[2rem] p-8 md:p-10 border border-border-color/50 hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+                className="flex flex-col bg-background-secondary/75 rounded-[1.5rem] p-8 md:p-10 border border-white/12 hover:-translate-y-2 hover:border-accent/50 transition-all duration-300 interactive-hover"
               >
-                <h3 className="text-2xl font-bold text-foreground mb-4 tracking-tight">{project.title}</h3>
+                <h3 className="text-2xl font-bold text-foreground mb-4 tracking-tight leading-tight">{project.title}</h3>
                 <p className="text-foreground-secondary mb-8 flex-grow leading-relaxed">
                   {project.description}
                 </p>
                 
                 <div className="mb-8 flex flex-wrap gap-2">
                   {project.technologies.map((tech, tIndex) => (
-                    <span key={tIndex} className="text-xs font-medium text-foreground-secondary bg-border-color/30 px-3 py-1 rounded-full">
+                    <span key={tIndex} className="text-[11px] uppercase tracking-[0.08em] font-semibold text-foreground-secondary bg-white/5 border border-white/10 px-3 py-1 rounded-full">
                       {tech}
                     </span>
                   ))}
@@ -80,7 +80,7 @@ export default function Projects() {
                       href={project.github} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-accent transition-colors"
+                      className="interactive-hover flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.08em] text-foreground hover:text-accent transition-colors"
                     >
                       <GithubIcon />
                       GitHub
@@ -91,7 +91,7 @@ export default function Projects() {
                       href={project.demo} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-accent transition-colors"
+                      className="interactive-hover flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.08em] text-foreground hover:text-accent transition-colors"
                     >
                       <ExternalLink className="w-4 h-4" />
                       Live Demo
