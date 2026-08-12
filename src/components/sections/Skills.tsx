@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Code, Server, Eye, Cpu, Terminal, Wrench, Sparkles } from "lucide-react";
 
 export default function Skills() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [activeSkill, setActiveSkill] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const skillCategories = [
     {
@@ -129,7 +134,7 @@ export default function Skills() {
         {/* Skills Grid */}
         <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
           <AnimatePresence mode="popLayout">
-            {filteredCategories.map((category) => (
+            {mounted && filteredCategories.map((category) => (
               <motion.div
                 key={category.id}
                 layout

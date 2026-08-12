@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlobalAtmosphereShell from "@/components/foundation/GlobalAtmosphereShell";
+import PremiumLoader from "@/components/foundation/PremiumLoader";
 
 /* ── Typography ─────────────────────────────────────────────────────────
  *  Inter          → primary display / body sans-serif
@@ -50,6 +51,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
     >
       <body suppressHydrationWarning className="min-h-screen font-sans bg-background text-foreground">
+        <PremiumLoader />
         <GlobalAtmosphereShell>
           <Navbar />
           <main className="relative z-20 flex min-h-screen flex-col items-center pt-28">
