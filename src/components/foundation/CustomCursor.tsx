@@ -2,6 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 
+/* ═══════════════════════════════════════════════════════════════════════
+ *  Custom Cursor — Spring-damped dot + trailing ring
+ *  ─────────────────────────────────────────────────────────────────────
+ *  • Dot follows mouse instantly
+ *  • Ring trails with spring physics (acceleration + damping)
+ *  • Stretch deformation on velocity
+ *  • Expands on interactive element hover
+ *  • mix-blend-mode: difference for contrast on any background
+ * ═══════════════════════════════════════════════════════════════════ */
+
 const SPRING = 0.12;
 const DAMPING = 0.76;
 const RING_SIZE = 40;
@@ -22,30 +32,26 @@ export default function CustomCursor() {
   const hasMovedRef = useRef(false);
 
   useEffect(() => {
+    // Feature detection — only enable on pointer-fine devices
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const hasCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
     const isTouch = hasCoarsePointer || "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-    if (isTouch || prefersReducedMotion || !hasFinePointer) {
-      return;
-    }
+    if (isTouch || prefersReducedMotion || !hasFinePointer) return;
 
     document.documentElement.classList.add("cursor-enhanced");
 
     const dotEl = dotRef.current;
     const ringEl = ringRef.current;
-
-    if (!dotEl || !ringEl) {
-      return;
-    }
+    if (!dotEl || !ringEl) return;
 
     const update = () => {
       const mouse = mouseRef.current;
       const ring = ringPosRef.current;
       const vel = velocityRef.current;
 
-      // Spring damping physics
+      // Spring-damped physics
       const ax = (mouse.x - ring.x) * SPRING;
       const ay = (mouse.y - ring.y) * SPRING;
 
@@ -55,10 +61,11 @@ export default function CustomCursor() {
       ring.x += vel.x;
       ring.y += vel.y;
 
+      // Velocity-based stretch deformation
       const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);
       const stretch = Math.min(speed * 0.04, 0.4);
 
-      // Smooth Transform Matrix / Translate3d
+      // GPU-accelerated transform
       dotEl.style.transform = `translate3d(${mouse.x - DOT_SIZE / 2}px, ${mouse.y - DOT_SIZE / 2}px, 0)`;
       ringEl.style.transform = `translate3d(${ring.x - RING_SIZE / 2}px, ${ring.y - RING_SIZE / 2}px, 0) scale(${1 + stretch}, ${1 - stretch * 0.5})`;
 
@@ -84,16 +91,12 @@ export default function CustomCursor() {
 
     const handleOver = (event: MouseEvent) => {
       const target = (event.target as HTMLElement | null)?.closest(".interactive-hover");
-      if (target) {
-        setHovered(true);
-      }
+      if (target) setHovered(true);
     };
 
     const handleOut = (event: MouseEvent) => {
       const relatedTarget = event.relatedTarget as HTMLElement | null;
-      if (relatedTarget?.closest(".interactive-hover")) {
-        return;
-      }
+      if (relatedTarget?.closest(".interactive-hover")) return;
       setHovered(false);
     };
 
@@ -116,7 +119,6 @@ export default function CustomCursor() {
       window.removeEventListener("mouseup", handleMouseUp);
       document.removeEventListener("mouseover", handleOver);
       document.removeEventListener("mouseout", handleOut);
-
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
       }
@@ -138,4 +140,3 @@ export default function CustomCursor() {
     </>
   );
 }
-

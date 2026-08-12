@@ -3,119 +3,19 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-// High-end Active Theory / Buttermax style GLSL Vertex Shader
-const vertexShader = `
-  varying vec2 vUv;
-  varying vec3 vNormal;
-  uniform float u_time;
-  uniform vec2 u_mouse;
-  uniform float u_velocity;
+/* ═══════════════════════════════════════════════════════════════════════
+ *  ShaderBackdrop — Fullsite 3D Starfield & Constellation Canvas
+ *  ─────────────────────────────────────────────────────────────────────
+ *  • 1,400+ small, crisp 3D star particles (size: 0.1)
+ *  • Multi-tone starry palette (Neon Green #39ff14, Mint, Cyan-White)
+ *  • Enhanced cursor interaction — dynamic swirl & dispersion when cursor hovers
+ *  • Fullsite scroll-linked camera movement through 3D space
+ * ═══════════════════════════════════════════════════════════════════ */
 
-  void main() {
-    vUv = uv;
-    vec3 pos = position;
-
-    // Distort vertices slightly near cursor for 3D liquid plane reaction
-    float dist = distance(uv, u_mouse);
-    float wave = sin(dist * 20.0 - u_time * 4.0) * exp(-dist * 4.0);
-    pos.z += wave * 0.08 * u_velocity;
-
-    gl_Position = vec4(pos, 1.0);
-  }
-`;
-
-// High-end Active Theory / Buttermax style GLSL Fragment Shader
-const fragmentShader = `
-  precision highp float;
-
-  varying vec2 vUv;
-  uniform float u_time;
-  uniform vec2 u_resolution;
-  uniform vec2 u_mouse;
-  uniform float u_velocity;
-  uniform float u_active;
-
-  // Simplex / Perlin noise functions
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
-
-  float snoise(vec2 v) {
-    const vec4 C = vec4(0.211324865405187, 0.366025403784439,
-                        -0.577350269189626, 0.024390243902439);
-    vec2 i  = floor(v + dot(v, C.yy));
-    vec2 x0 = v -   i + dot(i, C.xx);
-    vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-    vec4 x12 = x0.xyxy + C.xxzz;
-    x12.xy -= i1;
-    i = mod289(i);
-    vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
-    vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-    m = m*m; m = m*m;
-    vec3 x = 2.0 * fract(p * C.www) - 1.0;
-    vec3 h = abs(x) - 0.5;
-    vec3 ox = floor(x + 0.5);
-    vec3 a0 = x - ox;
-    m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
-    vec3 g;
-    g.x  = a0.x  * x0.x  + h.x  * x0.y;
-    g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-    return 130.0 * dot(m, g);
-  }
-
-  void main() {
-    vec2 aspectUv = vUv;
-    float aspect = u_resolution.x / max(u_resolution.y, 1.0);
-    aspectUv.x *= aspect;
-
-    vec2 mouse = u_mouse;
-    mouse.x *= aspect;
-
-    // Distance and vector from cursor
-    vec2 toMouse = aspectUv - mouse;
-    float dist = length(toMouse);
-    vec2 dir = normalize(toMouse + vec2(0.0001));
-
-    // Mouse hover proximity mask (0.0 when mouse is absent/far, 1.0 directly under cursor)
-    float proximity = exp(-dist * 4.2) * u_active;
-
-    // Dynamic fluid ripple & mouse velocity displacement gated by proximity
-    float ripple = sin(dist * 24.0 - u_time * 5.0) * exp(-dist * 5.0) * (u_velocity + 0.1) * proximity;
-    float noiseVal = snoise(vUv * 3.5 + vec2(u_time * 0.1, u_time * 0.15)) * proximity;
-    
-    // UV pixel displacement mapping strictly localized under cursor hover
-    vec2 distortedUv = vUv + dir * (ripple * 0.05 + proximity * 0.04);
-    distortedUv += vec2(snoise(vUv * 8.0 + u_time * 0.2)) * 0.01 * proximity;
-
-    // Chromatic Aberration sampling offset
-    float caOffset = (0.005 * (1.0 + u_velocity * 2.0) + ripple * 0.02) * proximity;
-    float r = snoise(distortedUv * 4.0 + vec2(caOffset, 0.0)) * proximity;
-    float g = snoise(distortedUv * 4.0) * proximity;
-
-    // Simulated Normal Vector Lighting & Surface Specular Highlight
-    vec3 normal = normalize(vec3(dir * (ripple + noiseVal * 0.3), 0.8));
-    vec3 lightDir = normalize(vec3(mouse - aspectUv, 0.6));
-    float specular = pow(max(dot(reflect(-lightDir, normal), vec3(0.0, 0.0, 1.0)), 0.0), 16.0) * proximity;
-
-    // Static Pure Black background at rest
-    vec3 baseBg = vec3(0.0, 0.0, 0.0);
-    vec3 deepGoldSmoke = vec3(0.14, 0.10, 0.02);  // Interactive Gold Tint on Hover
-    vec3 metallicGold = vec3(1.0, 0.84, 0.22);    // Bright Metallic Gold (#ffd700)
-    vec3 champagneGlow = vec3(1.0, 0.94, 0.72);   // Specular Gold Highlight
-
-    vec3 color = mix(baseBg, deepGoldSmoke, r * 0.5 + 0.3 * proximity);
-    color = mix(color, champagneGlow * 0.5, g * 0.3);
-    
-    // Interactive mouse hover metallic gold glow & specular highlights
-    color += metallicGold * (proximity * 0.45 + specular * 0.7 + u_velocity * proximity * 0.25);
-
-    // Radial vignette
-    float vignette = smoothstep(1.3, 0.3, length(vUv - 0.5));
-    color *= vignette;
-
-    gl_FragColor = vec4(color, 0.95);
-  }
-`;
+const STAR_COUNT = 1400;
+const CONNECTION_DISTANCE = 4.8;
+const MOUSE_INFLUENCE_RADIUS = 16;
+const MOUSE_REPULSION_STRENGTH = 0.35;
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -123,101 +23,286 @@ export default function ShaderBackdrop() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const hasCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
-
-    if (prefersReducedMotion || hasCoarsePointer) {
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    /* ── Renderer ──────────────────────────────────────────────────── */
     const renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: true,
       alpha: true,
+      antialias: true,
       powerPreference: "high-performance",
     });
-
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
+    /* ── Scene & Deep Fog ─────────────────────────────────────────── */
     const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    scene.fog = new THREE.FogExp2(0x000000, 0.015);
 
-    const uniforms = {
-      u_time: { value: 0 },
-      u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-      u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
-      u_velocity: { value: 0 },
-      u_active: { value: 0 },
-    };
+    /* ── Camera ────────────────────────────────────────────────────── */
+    const camera = new THREE.PerspectiveCamera(
+      65,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      300
+    );
+    camera.position.set(0, 0, 40);
 
-    const material = new THREE.ShaderMaterial({
-      uniforms,
-      vertexShader,
-      fragmentShader,
+    /* ── Small Star Particles Buffer ────────────────────────────────── */
+    const starGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(STAR_COUNT * 3);
+    const basePositions = new Float32Array(STAR_COUNT * 3);
+    const velocities = new Float32Array(STAR_COUNT * 3);
+    const starColors = new Float32Array(STAR_COUNT * 3);
+
+    const palette = [
+      new THREE.Color("#39ff14"),
+      new THREE.Color("#39ff14"),
+      new THREE.Color("#65ff47"),
+      new THREE.Color("#9dff88"),
+      new THREE.Color("#ffffff"),
+    ];
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+      const i3 = i * 3;
+      const x = (Math.random() - 0.5) * 120;
+      const y = (Math.random() - 0.5) * 120;
+      const z = (Math.random() - 0.5) * 90;
+
+      positions[i3] = x;
+      positions[i3 + 1] = y;
+      positions[i3 + 2] = z;
+
+      basePositions[i3] = x;
+      basePositions[i3 + 1] = y;
+      basePositions[i3 + 2] = z;
+
+      velocities[i3] = (Math.random() - 0.5) * 0.008;
+      velocities[i3 + 1] = (Math.random() - 0.5) * 0.008;
+      velocities[i3 + 2] = (Math.random() - 0.5) * 0.005;
+
+      const col = palette[Math.floor(Math.random() * palette.length)];
+      starColors[i3] = col.r;
+      starColors[i3 + 1] = col.g;
+      starColors[i3 + 2] = col.b;
+    }
+
+    starGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    starGeometry.setAttribute("color", new THREE.BufferAttribute(starColors, 3));
+
+    // 3D particle size (0.22)
+    const starMaterial = new THREE.PointsMaterial({
+      size: 0.22,
+      vertexColors: true,
       transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
     });
 
-    const geometry = new THREE.PlaneGeometry(2, 2, 32, 32);
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+    const starPoints = new THREE.Points(starGeometry, starMaterial);
+    scene.add(starPoints);
 
-    const targetMouse = { x: 0.5, y: 0.5 };
-    const currentMouse = { x: 0.5, y: 0.5 };
-    const prevMouse = { x: 0.5, y: 0.5 };
-    let targetActive = 0;
-    let currentActive = 0;
-    let currentVelocity = 0;
+    /* ── Constellation Connection Lines ───────────────────────────── */
+    const maxLines = 1800;
+    const linePositions = new Float32Array(maxLines * 6);
+    const lineColors = new Float32Array(maxLines * 6);
+    const lineGeometry = new THREE.BufferGeometry();
 
-    const resize = () => {
-      renderer.setSize(window.innerWidth, window.innerHeight, false);
-      uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+    lineGeometry.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
+    lineGeometry.setAttribute("color", new THREE.BufferAttribute(lineColors, 3));
+
+    const lineMaterial = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    const linesMesh = new THREE.LineSegments(lineGeometry, lineMaterial);
+    scene.add(linesMesh);
+
+    /* ── Floating Geometric Objects ────────────────────────────────── */
+    const icoGeo = new THREE.IcosahedronGeometry(16, 2);
+    const icoMat = new THREE.MeshBasicMaterial({
+      color: 0x39ff14,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.035,
+    });
+    const icoMesh = new THREE.Mesh(icoGeo, icoMat);
+    icoMesh.position.set(22, -10, -25);
+    scene.add(icoMesh);
+
+    const torusGeo = new THREE.TorusGeometry(10, 0.5, 16, 80);
+    const torusMat = new THREE.MeshBasicMaterial({
+      color: 0x39ff14,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.03,
+    });
+    const torusMesh = new THREE.Mesh(torusGeo, torusMat);
+    torusMesh.position.set(-24, 15, -20);
+    scene.add(torusMesh);
+
+    /* ── Mouse & Scroll Interaction State ─────────────────────────── */
+    const mouse = { x: 0, y: 0 };
+    const smoothMouse = { x: 0, y: 0 };
+    let scrollProgress = 0;
+    let smoothScrollProgress = 0;
+
+    const raycaster = new THREE.Raycaster();
+    const mouseNDC = new THREE.Vector2();
+    const mousePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const mouseWorld = new THREE.Vector3();
+
+    const onMouseMove = (e: MouseEvent) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
 
-    const onPointerMove = (e: MouseEvent) => {
-      targetMouse.x = e.clientX / window.innerWidth;
-      targetMouse.y = 1.0 - e.clientY / window.innerHeight;
-      targetActive = 1.0;
+    const onScroll = () => {
+      const maxScroll = Math.max(
+        document.documentElement.scrollHeight - window.innerHeight,
+        1
+      );
+      scrollProgress = window.scrollY / maxScroll;
     };
 
-    const onMouseLeave = () => {
-      targetActive = 0.0;
+    const onResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     };
 
-    window.addEventListener("resize", resize);
-    window.addEventListener("mousemove", onPointerMove, { passive: true });
-    document.addEventListener("mouseleave", onMouseLeave);
-    resize();
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    onScroll();
 
+    /* ── Animation Loop ────────────────────────────────────────────── */
+    let frameId: number;
     const clock = new THREE.Clock();
-    let animId: number;
 
     const animate = () => {
-      animId = requestAnimationFrame(animate);
+      frameId = requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-      const elapsedTime = clock.getElapsedTime();
-      uniforms.u_time.value = elapsedTime;
+      // Smooth interpolation for mouse & document scroll ratio
+      smoothMouse.x = lerp(smoothMouse.x, mouse.x, 0.06);
+      smoothMouse.y = lerp(smoothMouse.y, mouse.y, 0.06);
+      smoothScrollProgress = lerp(smoothScrollProgress, scrollProgress, 0.04);
 
-      // Smooth Physics Linear Interpolation (lerp) & Mouse Active State
-      currentMouse.x = lerp(currentMouse.x, targetMouse.x, 0.08);
-      currentMouse.y = lerp(currentMouse.y, targetMouse.y, 0.08);
-      currentActive = lerp(currentActive, targetActive, 0.06);
+      // Project mouse into 3D world space
+      mouseNDC.set(smoothMouse.x, smoothMouse.y);
+      raycaster.setFromCamera(mouseNDC, camera);
+      raycaster.ray.intersectPlane(mousePlane, mouseWorld);
 
-      const dx = currentMouse.x - prevMouse.x;
-      const dy = currentMouse.y - prevMouse.y;
-      const instVelocity = Math.sqrt(dx * dx + dy * dy) * 45.0;
+      // ── Fullsite Scroll-linked Camera Traversal ──
+      camera.position.x = smoothMouse.x * 6;
+      camera.position.y = -smoothScrollProgress * 30 + smoothMouse.y * 4;
+      camera.position.z = 40 + Math.sin(smoothScrollProgress * Math.PI) * 6;
+      camera.lookAt(0, -smoothScrollProgress * 30, 0);
 
-      currentVelocity = lerp(currentVelocity, instVelocity, 0.12);
-      currentVelocity = Math.min(currentVelocity, 2.0);
+      // ── Animate Small Stars (Drift + Enhanced Mouse Interaction) ──
+      const posArray = starGeometry.attributes.position.array as Float32Array;
 
-      prevMouse.x = currentMouse.x;
-      prevMouse.y = currentMouse.y;
+      for (let i = 0; i < STAR_COUNT; i++) {
+        const i3 = i * 3;
 
-      uniforms.u_mouse.value.set(currentMouse.x, currentMouse.y);
-      uniforms.u_velocity.value = currentVelocity;
-      uniforms.u_active.value = currentActive;
+        // Floating drift
+        posArray[i3] =
+          basePositions[i3] +
+          Math.sin(t * 0.4 + i * 0.1) * 1.4 +
+          velocities[i3] * t * 30;
+        posArray[i3 + 1] =
+          basePositions[i3 + 1] +
+          Math.cos(t * 0.35 + i * 0.12) * 1.6 +
+          velocities[i3 + 1] * t * 30;
+        posArray[i3 + 2] =
+          basePositions[i3 + 2] + Math.sin(t * 0.3 + i * 0.08) * 0.9;
+
+        // Wrap stars past boundary
+        if (posArray[i3] > 65) posArray[i3] -= 130;
+        if (posArray[i3] < -65) posArray[i3] += 130;
+        if (posArray[i3 + 1] > 65) posArray[i3 + 1] -= 130;
+        if (posArray[i3 + 1] < -65) posArray[i3 + 1] += 130;
+
+        // Cursor hover interaction — particles push & swirl away dynamically
+        const dx = posArray[i3] - mouseWorld.x;
+        const dy = posArray[i3 + 1] - (mouseWorld.y - smoothScrollProgress * 30);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < MOUSE_INFLUENCE_RADIUS && dist > 0.01) {
+          const force = (1 - dist / MOUSE_INFLUENCE_RADIUS) * MOUSE_REPULSION_STRENGTH;
+          const angle = Math.atan2(dy, dx) + 0.3; // slight swirl spin
+          posArray[i3] += Math.cos(angle) * force * 1.5;
+          posArray[i3 + 1] += Math.sin(angle) * force * 1.5;
+          posArray[i3 + 2] += force * 0.8;
+        }
+      }
+
+      starGeometry.attributes.position.needsUpdate = true;
+
+      // ── Update Constellation Lines ──
+      let lineCount = 0;
+      const lp = lineGeometry.attributes.position.array as Float32Array;
+      const lc = lineGeometry.attributes.color.array as Float32Array;
+
+      for (let i = 0; i < STAR_COUNT && lineCount < maxLines; i++) {
+        const i3 = i * 3;
+        for (let j = i + 1; j < STAR_COUNT && lineCount < maxLines; j += 2) {
+          const j3 = j * 3;
+          const dx = posArray[i3] - posArray[j3];
+          const dy = posArray[i3 + 1] - posArray[j3 + 1];
+          const dz = posArray[i3 + 2] - posArray[j3 + 2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+          if (dist < CONNECTION_DISTANCE) {
+            const idx = lineCount * 6;
+            const alpha = 1 - dist / CONNECTION_DISTANCE;
+
+            lp[idx] = posArray[i3];
+            lp[idx + 1] = posArray[i3 + 1];
+            lp[idx + 2] = posArray[i3 + 2];
+            lp[idx + 3] = posArray[j3];
+            lp[idx + 4] = posArray[j3 + 1];
+            lp[idx + 5] = posArray[j3 + 2];
+
+            lc[idx] = alpha * 0.2;
+            lc[idx + 1] = alpha * 0.9;
+            lc[idx + 2] = alpha * 0.1;
+            lc[idx + 3] = alpha * 0.2;
+            lc[idx + 4] = alpha * 0.9;
+            lc[idx + 5] = alpha * 0.1;
+
+            lineCount++;
+          }
+        }
+      }
+
+      for (let i = lineCount * 6; i < maxLines * 6; i++) {
+        lp[i] = 0;
+        lc[i] = 0;
+      }
+
+      lineGeometry.attributes.position.needsUpdate = true;
+      lineGeometry.attributes.color.needsUpdate = true;
+      lineGeometry.setDrawRange(0, lineCount * 2);
+
+      // Rotate Geometries
+      icoMesh.rotation.x = t * 0.04;
+      icoMesh.rotation.y = t * 0.06;
+      icoMesh.position.y = -10 - smoothScrollProgress * 25;
+
+      torusMesh.rotation.x = t * 0.03;
+      torusMesh.rotation.z = t * 0.05;
+      torusMesh.position.y = 15 - smoothScrollProgress * 30;
 
       renderer.render(scene, camera);
     };
@@ -225,16 +310,21 @@ export default function ShaderBackdrop() {
     animate();
 
     return () => {
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", onPointerMove);
-      document.removeEventListener("mouseleave", onMouseLeave);
-      cancelAnimationFrame(animId);
-      geometry.dispose();
-      material.dispose();
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      cancelAnimationFrame(frameId);
+      starGeometry.dispose();
+      starMaterial.dispose();
+      lineGeometry.dispose();
+      lineMaterial.dispose();
+      icoGeo.dispose();
+      icoMat.dispose();
+      torusGeo.dispose();
+      torusMat.dispose();
       renderer.dispose();
     };
   }, []);
 
   return <canvas ref={canvasRef} className="shader-backdrop" aria-hidden />;
 }
-
