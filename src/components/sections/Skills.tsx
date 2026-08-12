@@ -53,7 +53,7 @@ export default function Skills() {
       skills: [
         { name: "Linux", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg", desc: "POSIX shell & bash scripting" },
         { name: "Bash", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bash/bash-original.svg", desc: "Shell scripting & workflow automation" },
-        { name: "Raspberry Pi", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/raspberrypi/raspberrypi-original.svg", desc: "Hardware interface & IoT systems" },
+        { name: "Windows", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/windows8/windows8-original.svg", desc: "OS administration & scripting host" },
       ],
     },
     {
