@@ -116,7 +116,10 @@ body {
 @media (hover: hover) {
   .interactive-hover:hover {
     transform: translateY(-2px);
-    color: var(--accent) !important;
+  }
+  a.interactive-hover:not([class*="bg-accent"]):hover,
+  span.interactive-hover:hover {
+    color: var(--accent);
     text-shadow: 0 0 12px var(--accent-glow);
   }
   .glass-card:hover {

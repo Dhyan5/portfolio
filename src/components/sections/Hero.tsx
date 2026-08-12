@@ -125,10 +125,10 @@ export default function Hero() {
         >
           <a
             href="#projects"
-            className="interactive-hover w-full sm:w-auto px-8 py-4 bg-accent text-[#000000] rounded-full font-bold uppercase tracking-[0.1em] text-xs font-mono-tech flex items-center justify-center gap-2.5 shadow-[0_0_24px_rgba(57,255,20,0.3)] hover:shadow-[0_0_40px_rgba(57,255,20,0.6)] transition-all"
+            className="interactive-hover w-full sm:w-auto px-8 py-4 bg-accent text-[#000000] hover:text-[#000000] rounded-full font-bold uppercase tracking-[0.1em] text-xs font-mono-tech flex items-center justify-center gap-2.5 shadow-[0_0_24px_rgba(57,255,20,0.3)] hover:shadow-[0_0_40px_rgba(57,255,20,0.6)] transition-all"
           >
             Explore Projects
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-[#000000]" />
           </a>
           <a
             href="https://drive.google.com/file/d/1Py75qObC_QxqyAIJQesK97l3lKZUOVCx/view?usp=drive_link"
