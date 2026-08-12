@@ -40,7 +40,7 @@ export default function Experience() {
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, margin: "-100px" }}
+          viewport={{ once: true, margin: "-20px" }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="text-center max-w-3xl mx-auto mb-16"
         >
@@ -62,7 +62,7 @@ export default function Experience() {
               key={index}
               initial={{ opacity: 0, y: 55 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, margin: "-100px" }}
+              viewport={{ once: true, margin: "-20px" }}
               transition={{ duration: 0.8, delay: index * 0.15, ease: [0.16, 1, 0.3, 1] }}
               className="interactive-hover glass-card rounded-2xl p-8 md:p-10 border border-accent/15 relative overflow-hidden group"
             >

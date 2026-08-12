@@ -166,6 +166,14 @@ export default function ShaderBackdrop() {
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
 
+    const handleTouch = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+      }
+    };
+
     const onScroll = () => {
       const maxScroll = Math.max(
         document.documentElement.scrollHeight - window.innerHeight,
@@ -181,6 +189,8 @@ export default function ShaderBackdrop() {
     };
 
     window.addEventListener("mousemove", onMouseMove, { passive: true });
+    window.addEventListener("touchstart", handleTouch, { passive: true });
+    window.addEventListener("touchmove", handleTouch, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
     onScroll();
@@ -203,29 +213,31 @@ export default function ShaderBackdrop() {
       raycaster.setFromCamera(mouseNDC, camera);
       raycaster.ray.intersectPlane(mousePlane, mouseWorld);
 
-      // ── Fullsite Scroll-linked Camera Traversal ──
-      camera.position.x = smoothMouse.x * 6;
-      camera.position.y = -smoothScrollProgress * 30 + smoothMouse.y * 4;
-      camera.position.z = 40 + Math.sin(smoothScrollProgress * Math.PI) * 6;
-      camera.lookAt(0, -smoothScrollProgress * 30, 0);
+      // ── Fullsite Scroll-linked Camera Traversal (Enhanced Vertical & Touch Depth) ──
+      camera.position.x = smoothMouse.x * 7;
+      camera.position.y = -smoothScrollProgress * 35 + smoothMouse.y * 10;
+      camera.position.z = 40 + Math.sin(smoothScrollProgress * Math.PI) * 8;
+      camera.lookAt(smoothMouse.x * 2, -smoothScrollProgress * 35 + smoothMouse.y * 4, 0);
 
-      // ── Animate Small Stars (Drift + Enhanced Mouse Interaction) ──
+      // ── Animate Small Stars (Upward Flow + Kinetic Vertical Touch Response) ──
       const posArray = starGeometry.attributes.position.array as Float32Array;
 
       for (let i = 0; i < STAR_COUNT; i++) {
         const i3 = i * 3;
 
-        // Floating drift
+        // Upward kinetic drift stream + horizontal gentle sway
         posArray[i3] =
           basePositions[i3] +
-          Math.sin(t * 0.4 + i * 0.1) * 1.4 +
-          velocities[i3] * t * 30;
+          Math.sin(t * 0.4 + i * 0.1) * 1.5 +
+          velocities[i3] * t * 30 +
+          smoothMouse.x * 2;
         posArray[i3 + 1] =
           basePositions[i3 + 1] +
-          Math.cos(t * 0.35 + i * 0.12) * 1.6 +
-          velocities[i3 + 1] * t * 30;
+          Math.cos(t * 0.35 + i * 0.12) * 1.8 +
+          velocities[i3 + 1] * t * 30 +
+          smoothMouse.y * 3;
         posArray[i3 + 2] =
-          basePositions[i3 + 2] + Math.sin(t * 0.3 + i * 0.08) * 0.9;
+          basePositions[i3 + 2] + Math.sin(t * 0.3 + i * 0.08) * 1.2;
 
         // Wrap stars past boundary
         if (posArray[i3] > 65) posArray[i3] -= 130;
@@ -233,16 +245,16 @@ export default function ShaderBackdrop() {
         if (posArray[i3 + 1] > 65) posArray[i3 + 1] -= 130;
         if (posArray[i3 + 1] < -65) posArray[i3 + 1] += 130;
 
-        // Cursor hover interaction — particles push & swirl away dynamically
+        // Cursor & Touch Interaction — particles push & swirl dynamically horizontally AND vertically
         const dx = posArray[i3] - mouseWorld.x;
-        const dy = posArray[i3 + 1] - (mouseWorld.y - smoothScrollProgress * 30);
+        const dy = posArray[i3 + 1] - (mouseWorld.y - smoothScrollProgress * 35);
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < MOUSE_INFLUENCE_RADIUS && dist > 0.01) {
           const force = (1 - dist / MOUSE_INFLUENCE_RADIUS) * MOUSE_REPULSION_STRENGTH;
-          const angle = Math.atan2(dy, dx) + 0.3; // slight swirl spin
-          posArray[i3] += Math.cos(angle) * force * 1.5;
-          posArray[i3 + 1] += Math.sin(angle) * force * 1.5;
+          const angle = Math.atan2(dy, dx) + 0.3; // dynamic swirl spin
+          posArray[i3] += Math.cos(angle) * force * 2.0;
+          posArray[i3 + 1] += Math.sin(angle) * force * 2.2;
           posArray[i3 + 2] += force * 0.8;
         }
       }
@@ -311,6 +323,8 @@ export default function ShaderBackdrop() {
 
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchstart", handleTouch);
+      window.removeEventListener("touchmove", handleTouch);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
       cancelAnimationFrame(frameId);

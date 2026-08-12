@@ -46,9 +46,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
     >
-      <body className="min-h-screen font-sans bg-background text-foreground">
+      <body suppressHydrationWarning className="min-h-screen font-sans bg-background text-foreground">
         <GlobalAtmosphereShell>
           <Navbar />
           <main className="relative z-20 flex min-h-screen flex-col items-center pt-28">

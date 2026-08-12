@@ -74,7 +74,9 @@ export default function Footer() {
             <Mail className="w-4 h-4" /> Email
           </a>
           <button
+            type="button"
             onClick={scrollToTop}
+            suppressHydrationWarning
             className="flex items-center gap-1.5 text-accent hover:underline font-semibold group ml-2"
           >
             Back to Top

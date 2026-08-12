@@ -111,14 +111,14 @@ export default function GitHubActivity() {
   const [events, setEvents] = useState<GitHubEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // GitHub public Events API — no auth needed, returns last 90 days of public activity
         const res = await fetch(
           "https://api.github.com/users/Dhyan5/events/public?per_page=100",
-          { next: { revalidate: 3600 } } // cache for 1 hour
+          { next: { revalidate: 3600 } }
         );
         if (!res.ok) throw new Error("Failed to fetch");
         const data: GitHubEvent[] = await res.json();
@@ -135,7 +135,6 @@ export default function GitHubActivity() {
   const grid = generateDateGrid(events);
   const recentActivity = getRecentActivity(events);
 
-  // Split days into 7-row columns (weeks) for the heatmap
   const weeks: DayData[][] = [];
   for (let i = 0; i < grid.length; i += 7) {
     weeks.push(grid.slice(i, i + 7));
@@ -198,30 +197,56 @@ export default function GitHubActivity() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.7 }}
-              className="lg:col-span-3 glass-card rounded-2xl p-8 border border-white/10"
+              className="lg:col-span-3 glass-card rounded-2xl p-8 border border-white/10 flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-foreground">
-                  Contribution Graph
-                </h3>
-                <span className="font-mono-tech text-sm text-foreground-secondary">
-                  <span className="text-foreground font-bold">{totalCommits}</span> contributions
-                </span>
-              </div>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-foreground">
+                    Contribution Graph
+                  </h3>
+                  <span className="font-mono-tech text-sm text-foreground-secondary">
+                    <span className="text-foreground font-bold">{totalCommits}</span> contributions
+                  </span>
+                </div>
 
-              {/* Heatmap Grid */}
-              <div className="flex gap-[3px] overflow-x-auto pb-2">
-                {weeks.map((week, wIdx) => (
-                  <div key={wIdx} className="flex flex-col gap-[3px]">
-                    {week.map((day, dIdx) => (
-                      <div
-                        key={dIdx}
-                        title={`${day.date}: ${day.count} contribution${day.count !== 1 ? "s" : ""}`}
-                        className={`w-[14px] h-[14px] rounded-[3px] transition-all duration-200 hover:ring-1 hover:ring-white/40 hover:scale-125 ${LEVEL_COLORS[day.level]}`}
-                      />
-                    ))}
+                {/* Mobile Tap Tooltip Info Bar */}
+                {selectedDay ? (
+                  <div className="mb-4 px-3.5 py-2 rounded-lg bg-accent/15 border border-accent/40 font-mono-tech text-xs text-accent flex items-center justify-between shadow-[0_0_15px_rgba(57,255,20,0.15)] animate-fadeIn">
+                    <span>
+                      <strong className="text-foreground">{selectedDay.date}</strong>: {selectedDay.count} contribution{selectedDay.count !== 1 ? "s" : ""}
+                    </span>
+                    <button
+                      onClick={() => setSelectedDay(null)}
+                      className="text-xs text-foreground-secondary hover:text-accent font-bold px-1.5"
+                    >
+                      ✕
+                    </button>
                   </div>
-                ))}
+                ) : (
+                  <p className="text-[11px] font-mono-tech text-foreground-secondary/70 mb-4">
+                    Swipe horizontally & tap any square to inspect activity
+                  </p>
+                )}
+
+                {/* Heatmap Grid */}
+                <div className="flex gap-[3px] overflow-x-auto pb-4 touch-pan-x no-scrollbar">
+                  {weeks.map((week, wIdx) => (
+                    <div key={wIdx} className="flex flex-col gap-[3px] shrink-0">
+                      {week.map((day, dIdx) => (
+                        <button
+                          key={dIdx}
+                          onClick={() => setSelectedDay(day)}
+                          title={`${day.date}: ${day.count} contribution${day.count !== 1 ? "s" : ""}`}
+                          className={`w-[14px] h-[14px] rounded-[3px] transition-all duration-200 active:scale-125 hover:ring-1 hover:ring-white/40 ${
+                            selectedDay?.date === day.date
+                              ? "ring-2 ring-accent scale-125 z-10 shadow-[0_0_10px_#39ff14]"
+                              : ""
+                          } ${LEVEL_COLORS[day.level]}`}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Legend */}

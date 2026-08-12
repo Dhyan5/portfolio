@@ -3,19 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 
 /* ═══════════════════════════════════════════════════════════════════════
- *  Custom Cursor — Spring-damped dot + trailing ring
+ *  Custom Cursor & Mobile Touch Feedback Engine
  *  ─────────────────────────────────────────────────────────────────────
- *  • Dot follows mouse instantly
- *  • Ring trails with spring physics (acceleration + damping)
- *  • Stretch deformation on velocity
- *  • Expands on interactive element hover
- *  • mix-blend-mode: difference for contrast on any background
+ *  • Desktop: Spring-damped dot + trailing velocity stretch ring
+ *  • Mobile: Dynamic touch follower glow + touch pulse/ripple feedback
  * ═══════════════════════════════════════════════════════════════════ */
 
 const SPRING = 0.12;
 const DAMPING = 0.76;
 const RING_SIZE = 40;
 const DOT_SIZE = 8;
+
+interface TouchRipple {
+  id: number;
+  x: number;
+  y: number;
+}
 
 export default function CustomCursor() {
   const dotRef = useRef<HTMLDivElement | null>(null);
@@ -29,17 +32,67 @@ export default function CustomCursor() {
   const [visible, setVisible] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
+  const [ripples, setRipples] = useState<TouchRipple[]>([]);
   const hasMovedRef = useRef(false);
 
   useEffect(() => {
-    // Feature detection — only enable on pointer-fine devices
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+
     const hasCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
-    const isTouch = hasCoarsePointer || "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    const isTouchDevice = hasCoarsePointer || "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-    if (isTouch || prefersReducedMotion || !hasFinePointer) return;
+    // Mobile touch feedback handler
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      const touch = e.touches[0];
+      const newRipple: TouchRipple = {
+        id: Date.now() + Math.random(),
+        x: touch.clientX,
+        y: touch.clientY,
+      };
 
+      setRipples((prev) => [...prev.slice(-4), newRipple]);
+
+      // Move cursor dot to touch position for feedback
+      mouseRef.current.x = touch.clientX;
+      mouseRef.current.y = touch.clientY;
+      ringPosRef.current.x = touch.clientX;
+      ringPosRef.current.y = touch.clientY;
+      setVisible(true);
+      setPressed(true);
+
+      setTimeout(() => {
+        setRipples((prev) => prev.filter((r) => r.id !== newRipple.id));
+      }, 500);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      const touch = e.touches[0];
+      mouseRef.current.x = touch.clientX;
+      mouseRef.current.y = touch.clientY;
+    };
+
+    const handleTouchEnd = () => {
+      setPressed(false);
+      setTimeout(() => setVisible(false), 300);
+    };
+
+    if (isTouchDevice || !hasFinePointer) {
+      window.addEventListener("touchstart", handleTouchStart, { passive: true });
+      window.addEventListener("touchmove", handleTouchMove, { passive: true });
+      window.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+      return () => {
+        window.removeEventListener("touchstart", handleTouchStart);
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", handleTouchEnd);
+      };
+    }
+
+    // Desktop Mouse Pointer Flow
     document.documentElement.classList.add("cursor-enhanced");
 
     const dotEl = dotRef.current;
@@ -51,7 +104,6 @@ export default function CustomCursor() {
       const ring = ringPosRef.current;
       const vel = velocityRef.current;
 
-      // Spring-damped physics
       const ax = (mouse.x - ring.x) * SPRING;
       const ay = (mouse.y - ring.y) * SPRING;
 
@@ -61,11 +113,9 @@ export default function CustomCursor() {
       ring.x += vel.x;
       ring.y += vel.y;
 
-      // Velocity-based stretch deformation
       const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);
       const stretch = Math.min(speed * 0.04, 0.4);
 
-      // GPU-accelerated transform
       dotEl.style.transform = `translate3d(${mouse.x - DOT_SIZE / 2}px, ${mouse.y - DOT_SIZE / 2}px, 0)`;
       ringEl.style.transform = `translate3d(${ring.x - RING_SIZE / 2}px, ${ring.y - RING_SIZE / 2}px, 0) scale(${1 + stretch}, ${1 - stretch * 0.5})`;
 
@@ -137,6 +187,22 @@ export default function CustomCursor() {
         className={`cursor-ring ${visible ? "is-visible" : ""} ${hovered ? "is-hover" : ""} ${pressed ? "is-down" : ""}`}
         aria-hidden
       />
+
+      {/* Mobile Touch Ripple Feedback Elements */}
+      {ripples.map((ripple) => (
+        <span
+          key={ripple.id}
+          className="fixed pointer-events-none z-50 rounded-full border border-accent bg-accent/20 animate-touch-ripple -translate-x-1/2 -translate-y-1/2"
+          style={{
+            left: ripple.x,
+            top: ripple.y,
+            width: 44,
+            height: 44,
+          }}
+          aria-hidden
+        />
+      ))}
     </>
   );
 }
+

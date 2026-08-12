@@ -34,7 +34,7 @@ export default function About() {
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, margin: "-100px" }}
+          viewport={{ once: true, margin: "-20px" }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="text-center max-w-3xl mb-16"
         >
@@ -53,7 +53,7 @@ export default function About() {
         <motion.div
           initial={{ opacity: 0, y: 60 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, margin: "-100px" }}
+          viewport={{ once: true, margin: "-20px" }}
           transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
           className="interactive-hover w-full glass-card rounded-2xl p-8 md:p-10 mb-16 relative overflow-hidden group"
         >
@@ -90,7 +90,7 @@ export default function About() {
               key={index}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, margin: "-100px" }}
+              viewport={{ once: true, margin: "-20px" }}
               transition={{ duration: 0.7, delay: index * 0.12, ease: [0.16, 1, 0.3, 1] }}
               className="interactive-hover glass-card rounded-2xl p-8 flex flex-col justify-between"
             >

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Award, Mail, Phone, Send, Sparkles, CheckCircle2 } from "lucide-react";
+import { Award, Mail, Phone, Send, Sparkles, CheckCircle2, Copy, Check } from "lucide-react";
 import { useState } from "react";
 
 const GithubIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
@@ -38,6 +38,13 @@ const LinkedinIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2500);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,9 +107,9 @@ export default function Contact() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto items-start">
           {/* Direct Minimalist Links */}
           <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: false, margin: "-100px" }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-20px" }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="space-y-6"
           >
@@ -110,39 +117,67 @@ export default function Contact() {
               Contact & Links
             </h3>
 
-            <a
-              href="mailto:dhyanshetty7@gmail.com"
-              className="glass-card rounded-xl p-5 border border-white/10 hover:border-accent/50 flex items-center gap-4 group transition-all block"
-            >
-              <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent group-hover:scale-110 transition-transform shadow-[0_0_12px_rgba(57,255,20,0.15)]">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-mono-tech text-foreground-secondary uppercase tracking-widest block mb-0.5">
-                  Email
-                </span>
-                <span className="text-base font-semibold text-foreground group-hover:text-accent transition-colors font-mono-tech">
-                  dhyanshetty7@gmail.com
-                </span>
-              </div>
-            </a>
+            {/* Email Card with Copy button */}
+            <div className="glass-card rounded-xl p-5 border border-white/10 hover:border-accent/50 flex items-center justify-between group transition-all">
+              <a href="mailto:dhyanshetty7@gmail.com" className="flex items-center gap-4 flex-1">
+                <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent group-hover:scale-110 transition-transform shadow-[0_0_12px_rgba(57,255,20,0.15)]">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-mono-tech text-foreground-secondary uppercase tracking-widest block mb-0.5">
+                    Email
+                  </span>
+                  <span className="text-base font-semibold text-foreground group-hover:text-accent transition-colors font-mono-tech">
+                    dhyanshetty7@gmail.com
+                  </span>
+                </div>
+              </a>
+              <button
+                onClick={() => copyToClipboard("dhyanshetty7@gmail.com", "email")}
+                className="p-2.5 rounded-lg border border-white/10 bg-white/5 text-foreground-secondary hover:text-accent hover:border-accent active:scale-95 transition-all text-xs font-mono-tech flex items-center gap-1.5 shrink-0"
+                title="Copy Email Address"
+              >
+                {copiedKey === "email" ? (
+                  <>
+                    <Check className="w-4 h-4 text-accent" />
+                    <span className="text-accent text-[11px]">Copied!</span>
+                  </>
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
-            <a
-              href="tel:+917619101182"
-              className="glass-card rounded-xl p-5 border border-white/10 hover:border-accent/50 flex items-center gap-4 group transition-all block"
-            >
-              <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent group-hover:scale-110 transition-transform shadow-[0_0_12px_rgba(57,255,20,0.15)]">
-                <Phone className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-mono-tech text-foreground-secondary uppercase tracking-widest block mb-0.5">
-                  Phone
-                </span>
-                <span className="text-base font-semibold text-foreground group-hover:text-accent transition-colors font-mono-tech">
-                  +91 7619101182
-                </span>
-              </div>
-            </a>
+            {/* Phone Card with Copy button */}
+            <div className="glass-card rounded-xl p-5 border border-white/10 hover:border-accent/50 flex items-center justify-between group transition-all">
+              <a href="tel:+917619101182" className="flex items-center gap-4 flex-1">
+                <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent group-hover:scale-110 transition-transform shadow-[0_0_12px_rgba(57,255,20,0.15)]">
+                  <Phone className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-mono-tech text-foreground-secondary uppercase tracking-widest block mb-0.5">
+                    Phone
+                  </span>
+                  <span className="text-base font-semibold text-foreground group-hover:text-accent transition-colors font-mono-tech">
+                    +91 7619101182
+                  </span>
+                </div>
+              </a>
+              <button
+                onClick={() => copyToClipboard("+917619101182", "phone")}
+                className="p-2.5 rounded-lg border border-white/10 bg-white/5 text-foreground-secondary hover:text-accent hover:border-accent active:scale-95 transition-all text-xs font-mono-tech flex items-center gap-1.5 shrink-0"
+                title="Copy Phone Number"
+              >
+                {copiedKey === "phone" ? (
+                  <>
+                    <Check className="w-4 h-4 text-accent" />
+                    <span className="text-accent text-[11px]">Copied!</span>
+                  </>
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
             <a
               href="https://github.com/Dhyan5"
@@ -204,9 +239,9 @@ export default function Contact() {
 
           {/* Contact Form */}
           <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: false, margin: "-100px" }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-20px" }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="glass-card rounded-2xl p-8 border border-white/10"
           >
